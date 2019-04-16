@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>HTML5 API FileReader+ajax2.0+drag实现文件拖拽上传</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        #img-list {
+
+            overflow: hidden;
+        }
+
+        #img-list li {
+            background: rgba(255, 81, 80, 0.8);
+            width: 200px;
+            border: 1px gray solid;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 5px;
+        }
+
+        #img-list li img {
+            width: 64px;
+            height: 64px;
+        }
+
+        .del-btn {
+            text-decoration: none;
+            color: white;
+            font-size: 18px;
+        }
+
+        .del-btn:hover {
+            text-decoration: underline;
+            color: #d8c6c6;
+        }
+
+        #info {
+            width: 400px;
+            height: 150px;
+            border: 3px solid #666;
+
+            border-radius: 10px;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            text-align: center;
+            display: none;
+        }
+
+        .upload {
+            outline: none;
+            padding: 5px 15px;
+            border-radius: 5px;
+            color: white;
+            background: rgba(255, 81, 80, 0.8);
+            text-align: center;
+            border: none;
+            margin-top: 20px;
+            margin-left: 58px;
+
+        }
+    </style>
+    <script>
+
+        window.onload = function () {
+            init();
+        }
+        function init() {
+            var timer = null;
+            let imgList = document.querySelector('#img-list');
+            let uploadBtn = document.querySelector('.upload');
+            let info = document.querySelector('#info');
+            addEvent(window.document, [{
+                eventName: 'dragover', callback: (e) => {
+                    info.style.display = 'block';
+                    clearTimeout(timer);
+                    timer = setTimeout(() => { info.style.display = 'none'; }, 300);
+                    e.preventDefault();
+
+                }
+            }])
+            return new FileUpLoad(imgList, uploadBtn, info, url = '待传');
+        }
+        //events [{eventName,callback}]
+        function addEvent(obj, events) {
+            for (let i = 0; i < events.length; i++) {
+                obj.addEventListener(events[i].eventName, events[i].callback, false)
+            }
+        }
+
+        function FileUpLoad(ul, uploadbtn, info, url) {
+            this.$ul = ul;
+            this.$btn = uploadbtn;
+            this.$url = url;
+            this.$info = info;
+            this.$btn.onclick = this.upload.bind(this);
+            addEvent(this.$info, [
+                { eventName: 'dragenter', callback: () => { info.innerHTML = "请放开您的爪子"; } },
+                { eventName: 'dragleave', callback: (e) => { info.innerHTML = "请把文件拖放到这里"; } },
+                {
+                    eventName: 'drop', callback: (e) => {
+                        e.preventDefault();
+                        var self = this;
+                        Array.from(e.dataTransfer.files).forEach(file => {
+                            if (file.type.startsWith('image/')) {
+                                self.createItem(file);
+                            }
+
+                        });
+                    }
+                }
+            ])
+        }
+        FileUpLoad.prototype.createItem = function (image) {
+            let reader = new FileReader();
+            var self = this;
+            reader.onload = function () {
+                let li = document.createElement('li');
+                li.image = image;
+                li.innerHTML = '<img><a href="javascript:;" class="del-btn">删除</a>';
+                let img = li.children[0];
+                img.src = this.result;
+                let delBtn = li.children[1];
+                delBtn.onclick = function () {
+                    self.$ul.removeChild(li);
+                }
+                self.$ul.appendChild(li);
+            }
+            reader.readAsDataURL(image);
+        }
+        FileUpLoad.prototype.upload = function () {
+            let data = this.getImages();
+            //  this.oweAjax(data);
+
+        }
+        FileUpLoad.prototype.oweAjax = function (data) {
+            var ajax = new XMLHttpRequest();
+            ajax.open('POST', this.$url, true);
+            //显示上传进度
+            ajax.upload.addEventListener('process', function (ev) {
+                var percent = 100 * ev.loaded / ev.total;
+            }, false);
+            ajax.send(data);
+            ajax.onreadystatechange = function () {
+                if (ajax.status === 4) {
+                    if (ajax.status >= 200 && ajax.status < 300 || ajax.status === 304) {
+                        alert('成功');
+                    } else {
+                        alert('失败');
+                    }
+                } else {
+                    alert('失败');
+                }
+            }
+
+        }
+        FileUpLoad.prototype.getImages = function (files) {
+
+            let images = new FormData();
+            Array.from(this.$ul.children).forEach(li => {
+                images.append('image', li.image);
+            });
+            console.log(images.getAll('image'));
+            return images;
+        }
+
+
+    </script>
+
+</head>
+
+<body>
+    <ul id="img-list">
+        <!-- <li><img src="a.png" alt=""><a href="javascript:;" class="del-btn">删除</a></li>
+        <li><img src="b.png" alt=""><a href="javascript:;" class="del-btn">删除</a></li>
+        <li><img src="c.png" alt=""><a href="javascript:;" class="del-btn">删除</a></li> -->
+    </ul>
+    <button class='upload'>上传</button>
+    <div id="info">
+        请把文件拖放到这里
+    </div>
+</body>
+
+</html>

@@ -10,15 +10,16 @@ module.exports = {
         })
     ],
     entry: {
-        app: './src/index.js',
-        print: './src/print.js'
+        app: './src/index.js'
+     
     },
     output: {
         filename: '[name].bundle.js',
-        path: path.resolve(__dirname, 'dist')
+        path: path.resolve(__dirname, 'dist'),
+        chunkFilename: '[name].bundle.js',
     },
     mode: 'development',
-    devtool:'inline-source-map',
+   
     devServer:{
         contentBase: './dist'
     }
